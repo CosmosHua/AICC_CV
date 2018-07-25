@@ -1,0 +1,6 @@
+model_checkpoint_path: "pix2pix.model-161002"
+all_model_checkpoint_paths: "pix2pix.model-157002"
+all_model_checkpoint_paths: "pix2pix.model-158002"
+all_model_checkpoint_paths: "pix2pix.model-159002"
+all_model_checkpoint_paths: "pix2pix.model-160002"
+all_model_checkpoint_paths: "pix2pix.model-161002"

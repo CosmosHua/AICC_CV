@@ -1,0 +1,76 @@
+126@backup@1W40_RGB£º
+###############################################################
+batch_size=1, g_optim=2£º(1K_60)->????(1W_40)
+RCVer 53002(1W_40)£º
+PSNR :	Mesh=18.467334	Recover=28.772406	Gain=10.305071
+SSIM :	Mesh=0.919684	Recover=0.993267		Gain=0.073582
+RCVer 58002(1W_40)£º
+PSNR :	Mesh=18.467334	Recover=28.742299	Gain=10.274965
+SSIM :	Mesh=0.919684	Recover=0.993129		Gain=0.073444
+RCVer 72002(1W_40)£º
+PSNR :	Mesh=18.467334	Recover=28.880178	Gain=10.412843
+SSIM :	Mesh=0.919684	Recover=0.993331		Gain=0.073646
+
+30@backup@1W40_RGB£º
+###############################################################
+RCVer 174002(1W_40)£ºssim_loss=1000, batch_size=1, g_optim=1
+PSNR :	Mesh=18.467334	Recover=28.992546	Gain=10.525212
+SSIM :	Mesh=0.919684	Recover=0.993460		Gain=0.073775
+going on from 174002, try:	ssim_loss=5000, batch_size=2	BAD!
+going on from 174002, try:	ssim_loss=10000, batch_size=1	BAD!
+
+###############################################################
+# Conclusion1£ºOptimizing generator twice/batch is better than once/batch!
+###############################################################
+
+
+30@backup@1W4_g2_sslf£ºRGB
+###############################################################
+SSLF=5, batch_size=1, g_optim=2£º56001(1K_60)->????(1W_4)
+counter = 6000	PSNR = 28.974654	SSIM = 0.993528 # looks a bit blurry!
+counter = 56000	PSNR = 28.868930	SSIM = 0.993371 # looks not good!
+counter = 57000	PSNR = 28.833594	SSIM = 0.993417 # looks not good!
+counter = 60000	PSNR = 28.682648	SSIM = 0.993316 # looks better!
+
+###############################################################
+# Conclusion2£ºPSNR/SSIM is not sufficient/proper to evaluate image quality!
+###############################################################
+
+
+30@backup@1W4_g2_sslf2£ºRGB
+###############################################################
+SSLF=5, batch_size=1, g_optim=2£º56001(1K_60)->60000(1W_4)->????(1W_4)
+counter=8000	 PSNR=28.955945	 SSIM=0.993589
+counter=9500	 PSNR=28.986398	 SSIM=0.993560
+counter=26500	 PSNR=28.960796	 SSIM=0.993592
+counter=60000	 PSNR=28.934739	 SSIM=0.993643 # [scipy.misc.imsave]
+		PSNR=30.646813	 SSIM=0.995089 # [cv2.imwrite]
+counter=71000	 PSNR=28.943231	 SSIM=0.993550
+
+###############################################################
+# Conclusion3£ºSSLF can accelerate convergence  and avoid overfitting!
+###############################################################
+
+
+30@backup@1W4_BGR£º[scipy.misc.imsave]->[cv2.imwrite]
+###############################################################
+BGR, SSLF=5, batch_size=1, g_optim=2£º56001(1K_60)->60000(1W_4)->????(1W_4)
+@num=13500	[PSNR SSIM] = [30.66334141  0.99511061 30.51341643]
+@num=33500	[PSNR SSIM] = [30.63509503  0.9950753  30.48422623]
+@num=41500	[PSNR SSIM] = [30.64972213  0.99512362 30.50026258]
+@num=58500	[PSNR SSIM] = [30.68453678  0.99515003 30.53571758]
+@num=61000	[PSNR SSIM] = [30.68498425  0.99514144 30.53589956]
+
+126@backup@1W4_BGR£º[scipy.misc.imsave]->[cv2.imwrite]
+###############################################################
+BGR, SSLF=5, batch_size=1, g_optim=2£º56001(1K_60)->60000(1W_4)->????(1W_4)
+@num=26501	[PSNR SSIM] = [ 30.77533398   0.99521948  30.6282118 ]
+@num=34501	[PSNR SSIM] = [ 30.75587163   0.99521195  30.60861098]
+@num=39001	[PSNR SSIM] = [ 30.78289362   0.99523026  30.6360671 ]
+@num=42001	[PSNR SSIM] = [ 30.8050967    0.9952458   30.65864321]
+@num=51001	[PSNR SSIM] = [ 30.75937044   0.9952029   30.61181461]
+
+###############################################################
+# Conclusion4£ºcv2.imwrite(0-255) is better than scipy.misc.imsave(0-1.0)!
+###############################################################
+
