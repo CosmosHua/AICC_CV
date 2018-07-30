@@ -48,8 +48,8 @@ def main(_):
 
     print("\nParameters :\n", args) # device_count: limit number of GPUs
     config = tf.ConfigProto(device_count={"GPU":1}, allow_soft_placement=True)
-    config.gpu_options.per_process_gpu_memory_fraction = 0.1 # gpu_memory ratio
-    #config.gpu_options.allow_growth = True # dynamicly apply gpu_memory
+    #config.gpu_options.per_process_gpu_memory_fraction = 0.1 # gpu_memory ratio
+    config.gpu_options.allow_growth = True # dynamicly apply gpu_memory
     with tf.Session(config=config) as sess:
         model = pix2pix(sess = sess, batch_size = args.batch_size,
                         input_nc = args.input_nc, output_nc = args.output_nc,
