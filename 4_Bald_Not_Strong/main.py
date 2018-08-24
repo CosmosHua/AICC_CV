@@ -28,23 +28,20 @@ parser.add_argument('--phase', dest='phase', default='train', help='train, test'
 #parser.add_argument('--serial_batches', dest='serial_batches', type=bool, default=False, help='takes images in order to make batches, otherwise takes them randomly')
 #parser.add_argument('--serial_batch_iter', dest='serial_batch_iter', type=bool, default=True, help='iter into serial image list')
 parser.add_argument('--model_dir', dest='model_dir', default='./checkpoint', help='models are saved here')
-parser.add_argument('--train_dir', dest='train_dir', default='./train', help='training data are saved here')
-parser.add_argument('--sample_dir', dest='sample_dir', default='./sample', help='sample are saved here')
-parser.add_argument('--test_dir', dest='test_dir', default='./test', help='test sample are saved here')
+parser.add_argument('--train_dir', dest='train_dir', default='./Train', help='training data are saved here')
+parser.add_argument('--sample_dir', dest='sample_dir', default='./Sample', help='sample are saved here')
+parser.add_argument('--test_dir', dest='test_dir', default='./Test', help='test sample are saved here')
 parser.add_argument('--L1_lambda', dest='L1_lambda', type=float, default=200., help='weight on L1 term in objective')
 parser.add_argument('--SS_lambda', dest='SS_lambda', type=float, default=5, help='weight on SSIM term in objective')
 args = parser.parse_args()
 
 
 def main(_):
-    args.train_dir = "/home/hua.fu/AICC4/CS_Train"
-    args.train_dir = "/home/hua.fu/AICC4/HRFace1K_60"
-    args.train_dir = "/home/hua.fu/AICC4/IDFace1W_4"
+    args.train_dir = "/home/joshua/AICC4/IDFace1W4"
     args.model_dir += "/" + os.path.basename(args.train_dir)
     if args.phase=="train": assert(os.path.isdir(args.train_dir))
-    if not os.path.exists(args.model_dir):  os.makedirs(args.model_dir)
-    if not os.path.exists(args.sample_dir): os.makedirs(args.sample_dir)
-    if not os.path.exists(args.test_dir):   os.makedirs(args.test_dir)
+    if not os.path.exists(args.model_dir):  os.makedirs(args.model_dir) # for train/test
+    if not os.path.exists(args.test_dir):   os.makedirs(args.test_dir) # for train/test
 
     print("\nParameters :\n", args) # device_count: limit number of GPUs
     config = tf.ConfigProto(device_count={"GPU":1}, allow_soft_placement=True)
@@ -65,3 +62,4 @@ if __name__ == '__main__':
 #####################################################################
 # nohup python main.py --phase=train > log.txt & # Train
 # rm test/*.png; python main.py --phase=test --batch_size=5; sz test/003833*.png
+
