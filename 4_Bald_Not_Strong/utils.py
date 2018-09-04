@@ -64,6 +64,7 @@ def PSNR_(I, K, ch=1, L=255):
     if type(K)==str: K = cv2.imread(K)
     # assert(I.shape == K.shape) # assert if False
     if I.shape!=K.shape: K = cv2.resize(K,I.shape[1::-1])
+
     IK = (I-K*1.0)**2; MAX = L**2; ee = MAX*1E-10
     if ch<2: MSE = np.mean(IK) # combine/average channels
     else: MSE = np.mean(IK,axis=(0,1)) # separate channels

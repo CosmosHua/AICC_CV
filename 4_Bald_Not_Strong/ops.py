@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.framework import ops
 
-TType = tf.float32; #TType = tf.float16
+TType = tf.float32; # TType = tf.float16
 
 
 class batch_norm(object):
