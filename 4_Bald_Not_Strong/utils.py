@@ -1,15 +1,20 @@
 # coding:utf-8
 #!/usr/bin/python3
 """ Some codes from https://github.com/Newmu/dcgan_code """
+# get_stddev = lambda x,h,w: (w*h*x.get_shape()[-1])**-0.5
+# import pprint; pp = pprint.PrettyPrinter()
 import os, cv2
 import numpy as np
-# import pprint; pp = pprint.PrettyPrinter()
-# get_stddev = lambda x,h,w: (w*h*x.get_shape()[-1])**-0.5
+
+sz = [] # restore input images size for save_images
+res = lambda im,ss: cv2.resize(im, ss, interpolation=cv2.INTER_LANCZOS4)
 
 
 # Load single image from path: resize to size->concatenate
 def load_image(path, size=(256,256), is_test=False): # path=(*.jpg)
     img_A = cv2.imread(path) # Load img_A = mesh image (input x)
+    sz.append(img_A.shape[1::-1]) # (width,height), needn't global
+    
     if is_test: img_B = img_A # For test: img_B is unnecessary
     else: # For train: Load img_B = clean image (label y)
         id = path.rfind('_'); img_B = cv2.imread(path[:id]+'.jpg') # clean
@@ -18,42 +23,44 @@ def load_image(path, size=(256,256), is_test=False): # path=(*.jpg)
     
     #img_A = cv2.cvtColor(img_A, cv2.COLOR_BGR2RGB) # im[:,:,::-1]
     #img_B = cv2.cvtColor(img_B, cv2.COLOR_BGR2RGB) # im[:,:,::-1]
-    img_A = cv2.resize(img_A, size, interpolation=cv2.INTER_LANCZOS4)
-    img_B = cv2.resize(img_B, size, interpolation=cv2.INTER_LANCZOS4)
     
+    img_A = res(img_A, size); img_B = res(img_B, size) # resize
     img_A = img_A/127.5-1; img_B = img_B/127.5-1 # normalize->center
     img_BA = np.concatenate((img_B, img_A), axis=2) # along channels
     return img_BA # clean+mesh: (size, img_B_channel+img_A_channel)
 
-# Save images to path: resize to size->merge
-def save_images(images, path, size=(178,220)):
+# Save images to path: resize or merge
+def save_images(images, path, size): # to size
     im = (images+1.0)*127.5 # restore to [0,255]
     #im = im[:,:,:,::-1] # restore channels: RGB2BGR
-    im = Merge(im, size) # resize images and then merge
+    
+    if len(im)<2: im = res(im[0], size) # resize single image
+    else: im = Merge(im, (178,220)) # resize then merge images
+    
     if path[-3:]=="png": cv2.imwrite(path, im, [cv2.IMWRITE_PNG_COMPRESSION,3])
     else: cv2.imwrite(path[:-4]+"_.jpg", im, [cv2.IMWRITE_JPEG_QUALITY,100])
 
 
-def Merge(IMs, size): # resize to size->merge
+# Join images after resize to uniform size
+def Merge(IMs, size): # resize + merge
     N = len(IMs); w,h = size # size=(width,height)
     R = int(N**0.5); C = int(np.ceil(N/R)) # layout=(Row,Col)
-    ff = lambda im,size: cv2.resize(im, size, interpolation=cv2.INTER_LANCZOS4)
     
     # Method 3: SUCCESS!
     pd = np.zeros((h, w, IMs.shape[-1])) # padding
-    IMs = [ff(im,size) for im in IMs] + [pd]*(R*C-N) # resize + pad
+    IMs = [res(im,size) for im in IMs] + [pd]*(R*C-N) # resize + pad
     IMs = [np.concatenate(IMs[i*C:i*C+C],axis=1) for i in range(R)] # widen
     return np.concatenate(IMs,axis=0) # heighten: join rows
     
     '''# Method 1: SUCCESS!
     img = np.zeros((R*h, C*w, IMs.shape[-1]))
     for id,im in enumerate(IMs): # (i,j)=(row,col)
-        i,j = id//C, id%C;  img[i*h:i*h+h, j*w:j*w+w, :] = ff(im,size)
+        i,j = id//C, id%C;  img[i*h:i*h+h, j*w:j*w+w, :] = res(im,size)
     return img
     
     # Method 2: FAIL!
     pd = np.zeros((h, w, IMs.shape[-1])) # padding
-    IMs = [ff(im,size) for im in IMs] + [pd]*(R*C-N) # resize
+    IMs = [res(im,size) for im in IMs] + [pd]*(R*C-N) # resize
     #IMs[N:] = [pd.copy() for i in range(R*C-N)] # unnecessary
     return np.array(IMs).reshape([R*h, C*w, -1]) # FAIL!'''
 

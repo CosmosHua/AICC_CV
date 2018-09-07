@@ -383,7 +383,7 @@ class pix2pix(object):
         
         for i,image in enumerate(images):
             im = self.sess.run(self.fake_B_sample, feed_dict={self.real_data: image})
-            save_images(im, data[i*batch][:-4]+".png")
+            save_images(im, data[i*batch][:-4]+".png", sz[i])
         print("Test time: %f s" % (time.time()-load_time))
         if batch==1: print("[PSNR SSIM] =", BatchPS(args.test_dir))
 
@@ -395,7 +395,7 @@ class pix2pix(object):
         images = self.load_data(mesh, is_test=True)[:,None]
         for i,image in enumerate(images): # output *.png to args.test_dir
             im = self.sess.run(self.fake_B_sample, feed_dict={self.real_data: image})
-            save_images(im, mesh[i][:-4]+".png") # batch_size=1
+            save_images(im, mesh[i][:-4]+".png", sz[i]) # batch_size=1
         
         ps = self.ps; out = "" # ps is a reference of self.ps
         pp = BatchPS(args.test_dir) # [PNSR, SSIM, PNSR*SSIM]
@@ -440,12 +440,13 @@ class pix2pix(object):
         data = np.random.choice(data, self.batch_size)
         images = self.load_data(data, is_test=False)
         im, d_loss, g_loss = self.sess.run([self.fake_B_sample, self.d_loss, self.g_loss], feed_dict={self.real_data: images})
-        save_images(im, './{}/train_{:08d}.png'.format(sample_dir, counter))
+        save_images(im, './{}/train_{:08d}.png'.format(sample_dir, counter), sz[0])
         print("[Sample] d_loss: {:.8f}, g_loss: {:.8f}".format(d_loss, g_loss))
     
     
     def load_data(self, data, is_test=False): # batch images
-        size = (self.image_size, self.image_size) # for resize
+        size = (self.image_size,)*2 # resize for feed-in
+        sz.clear() # initialize load_image, needn't global
         images = [load_image(im, size, is_test) for im in data]
         if not self.is_grayscale: # for color images
             return np.array(images).astype(np.float32)
