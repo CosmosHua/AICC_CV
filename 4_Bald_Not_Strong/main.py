@@ -5,6 +5,8 @@ import tensorflow as tf
 from model import pix2pix
 
 
+# os.environ["CUDA_VISIBLE_DEVICES"]="" # assign/disable GPUs
+
 parser = argparse.ArgumentParser(description='')
 #parser.add_argument('--dataset', dest='dataset', default='IDFace', help='name of the dataset')
 parser.add_argument('--epoch', dest='epoch', type=int, default=2, help='# of epoch')
