@@ -1,15 +1,16 @@
 # coding:utf-8
 #!/usr/bin/python3
+
 import argparse, os
 import tensorflow as tf
 from model import pix2pix
 
 
 # os.environ["CUDA_VISIBLE_DEVICES"]="" # assign/disable GPUs
-
+################################################################################
 parser = argparse.ArgumentParser(description='')
 #parser.add_argument('--dataset', dest='dataset', default='IDFace', help='name of the dataset')
-parser.add_argument('--epoch', dest='epoch', type=int, default=2, help='# of epoch')
+parser.add_argument('--epoch', dest='epoch', type=int, default=20, help='# of epoch')
 parser.add_argument('--batch_size', dest='batch_size', type=int, default=1, help='# images in batch')
 parser.add_argument('--train_size', dest='train_size', type=int, default=50000, help='# images used to train')
 #parser.add_argument('--fine_size', dest='fine_size', type=int, default=256, help='then crop to this size')
@@ -38,8 +39,9 @@ parser.add_argument('--SS_lambda', dest='SS_lambda', type=float, default=5, help
 args = parser.parse_args()
 
 
+################################################################################
 def main(_):
-    args.train_dir = "/home/joshua/AICC4/IDFace1W4"
+    args.train_dir = "HRFace1.2"
     args.model_dir += "/" + os.path.basename(args.train_dir)
     if args.phase=="train": assert(os.path.isdir(args.train_dir))
     if not os.path.exists(args.model_dir):  os.makedirs(args.model_dir) # for train/test
@@ -64,4 +66,3 @@ if __name__ == '__main__':
 #####################################################################
 # nohup python main.py --phase=train > log.txt & # Train
 # rm test/*.png; python main.py --phase=test --batch_size=5; sz test/003833*.png
-

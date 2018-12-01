@@ -1,33 +1,41 @@
 # coding:utf-8
 #!/usr/bin/python3
 """ Some codes from https://github.com/Newmu/dcgan_code """
-# get_stddev = lambda x,h,w: (w*h*x.get_shape()[-1])**-0.5
-# import pprint; pp = pprint.PrettyPrinter()
 import os, cv2
 import numpy as np
 
-sz = [] # restore input images size for save_images
+
+################################################################################
+# import pprint; pp = pprint.PrettyPrinter()
+# get_stddev = lambda x,h,w: (w*h*x.get_shape()[-1])**-0.5
 res = lambda im,ss: cv2.resize(im, ss, interpolation=cv2.INTER_LANCZOS4)
 
 
-# Load single image from path: resize to size->concatenate
-def load_image(path, size=(256,256), is_test=False): # path=(*.jpg)
-    img_A = cv2.imread(path) # Load img_A = mesh image (input x)
-    sz.append(img_A.shape[1::-1]) # (width,height), needn't global
+################################################################################
+# Load single Clean-Mesh image pair: resize->concatenate in channels
+# Note: Clean and Mesh images should be *.jpg and in the SAME folder!
+# mesh = Mesh image path(e.g. "F_3.jpg") => Clean image(e.g. "F.jpg")
+def load_image(mesh, size=(256,256), is_test=False):
+# params: img_A = Mesh image (input x);  img_B = Clean image (label y)
+
+    img_A = cv2.imread(mesh); sz = img_A.shape[1::-1] # (width,height)
+    id = mesh.rfind('_'); clean = mesh[:id]+'.jpg' # Clean image
+    # OR: sp = mesh.split('_'); clean = '_'.join(sp[:-1])+'.jpg'
     
-    if is_test: img_B = img_A # For test: img_B is unnecessary
-    else: # For train: Load img_B = clean image (label y)
-        id = path.rfind('_'); img_B = cv2.imread(path[:id]+'.jpg') # clean
-        # dir = path.split('_'); img_B = cv2.imread('_'.join(dir[:-1])+'.jpg')
-        # print("Load :", path, path[:id]+'.jpg') # apply to the 1st Method
+    if is_test: img_B = img_A # Test: img_B is unnecessary
+    elif os.path.isfile(clean): img_B = cv2.imread(clean)
+    else: print("Invalid:", clean, "\tSkip:", mesh); return False,sz
+    #print("Load:", mesh, img_A.shape, "\t", clean, img_B.shape)
     
     #img_A = cv2.cvtColor(img_A, cv2.COLOR_BGR2RGB) # im[:,:,::-1]
     #img_B = cv2.cvtColor(img_B, cv2.COLOR_BGR2RGB) # im[:,:,::-1]
     
-    img_A = res(img_A, size); img_B = res(img_B, size) # resize
-    img_A = img_A/127.5-1; img_B = img_B/127.5-1 # normalize->center
+    img_A = res(img_A, size)/127.5-1 # resize->center normalize
+    img_B = res(img_B, size)/127.5-1 # resize->center normalize
+    
     img_BA = np.concatenate((img_B, img_A), axis=2) # along channels
-    return img_BA # clean+mesh: (size, img_B_channel+img_A_channel)
+    return img_BA, sz # (size, img_B_channel+img_A_channel)
+
 
 # Save images to path: resize or merge
 def save_images(images, path, size): # to size
@@ -65,6 +73,7 @@ def Merge(IMs, size): # resize + merge
     return np.array(IMs).reshape([R*h, C*w, -1]) # FAIL!'''
 
 
+################################################################################
 # Peak Signal to Noise Ratio
 def PSNR_(I, K, ch=1, L=255):
     if type(I)==str: I = cv2.imread(I)

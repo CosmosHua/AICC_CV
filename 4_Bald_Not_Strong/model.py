@@ -1,5 +1,6 @@
 # coding:utf-8
 #!/usr/bin/python3
+
 import numpy as np
 import os, time, cv2
 import tensorflow as tf
@@ -9,13 +10,14 @@ from ops import *
 from utils import *
 
 
+################################################################################
 class pix2pix(object):
-    def __init__(self, sess, batch_size=1, image_size=256, output_size=256, gf_dim=64, df_dim=64,
+    def __init__(self, sess, batch_size=1, input_size=256, output_size=256, gf_dim=64, df_dim=64,
                  input_nc=3, output_nc=3, L1_lambda=200, SS_lambda=5, keep=10): # old L1_lambda=100
         """ Args:
             sess: TensorFlow session
             batch_size: The size of batch. Should be specified before training.
-            image_size: The resolution in pixels of the input images. [256]
+            input_size: The resolution in pixels of the input images. [256]
             output_size: The resolution in pixels of the output images. [256]
             gf_dim: (optional) Dimension of gen filters in first conv layer. [64]
             df_dim: (optional) Dimension of discrim filters in first conv layer. [64]
@@ -24,7 +26,7 @@ class pix2pix(object):
         """
         self.sess = sess
         self.batch_size = batch_size
-        self.image_size = image_size
+        self.input_size = input_size
         self.output_size = output_size
 
         self.gf_dim = gf_dim
@@ -63,13 +65,13 @@ class pix2pix(object):
 
 
     def build_model(self):
-        shape = [self.batch_size, self.image_size, self.image_size, self.input_nc + self.output_nc]
+        shape = [self.batch_size, self.input_size, self.input_size, self.input_nc + self.output_nc]
         self.real_data = tf.placeholder(dtype=TType, shape=shape, name='real_A_and_B_images')
         
         self.real_B = self.real_data[:, :, :, :self.input_nc] # clean image
         self.real_A = self.real_data[:, :, :, self.input_nc:] # mesh image
         
-        #if self.image_size==250: # help(tf.pad): [batch_size,height,width,channels]
+        #if self.input_size==250: # help(tf.pad): [batch_size,height,width,channels]
         #   paddings = tf.constant([[0, 0], [3, 3], [3, 3], [0, 0]])
         #   self.real_A = tf.pad(self.real_A, paddings=paddings, mode='REFLECT')
         #   self.real_B = tf.pad(self.real_B, paddings=paddings, mode='REFLECT')
@@ -342,6 +344,7 @@ class pix2pix(object):
             for id in range(batch_num):
                 batch = data[id*self.batch_size:(id+1)*self.batch_size]
                 images = self.load_data(batch, is_test=False)
+                if type(images)==bool: continue # discard this batch
 
                 # Update D network:
                 _, summary_str = self.sess.run([d_optim, self.d_sum], feed_dict={self.real_data: images})
@@ -370,32 +373,34 @@ class pix2pix(object):
 
 
     def test(self, args): # Test pix2pix
-        start_time = time.time(); batch = args.batch_size
-        data = glob(os.path.join(args.test_dir, "*.jpg"))
-        data.sort(); num = (len(data)//batch)*batch # multiple of batch
-        images = self.load_data(data, is_test=True) # [N,height,width,channel]
-        images = [images[i:i+batch] for i in range(0,num,batch)] # repack
-        print("\n"+"#"*50+"\nTesting = %d images" % len(images))
+        start_time = time.time(); batch = self.batch_size
+        data = sorted(glob(os.path.join(args.test_dir, "*.jpg")))
+        print("\n"+"#"*50+"\nTesting = %d images" % len(data))
         
-        # self.sess.run(tf.global_variables_initializer())
+        #self.sess.run(tf.global_variables_initializer())
         if not self.load_model(args.model_dir): return # Load model
         print("Load time: %f s" % (time.time()-start_time)); load_time = time.time()
         
-        for i,image in enumerate(images):
-            im = self.sess.run(self.fake_B_sample, feed_dict={self.real_data: image})
-            save_images(im, data[i*batch][:-4]+".png", sz[i])
+        data = [data[i:i+batch] for i in range(0,len(data),batch)]
+        for i,image in enumerate(data): # More I/O time cost
+            im = self.load_data(image, is_test=True) # [N,height,width,channel]
+            im = self.sess.run(self.fake_B_sample, feed_dict={self.real_data: im})
+            save_images(im, image[0][:-4]+".png", self.shape[0]) # save png image
         print("Test time: %f s" % (time.time()-load_time))
         if batch==1: print("[PSNR SSIM] =", BatchPS(args.test_dir))
 
 
     # similiar to test: save model, without load_model
     def test_model(self, args, counter, id=2, ff="ps.log"):
+        if self.batch_size > 1: # BatchPS need batch=1
+            self.save_model(args.model_dir, counter); return
+        
         mesh = glob(os.path.join(args.test_dir, "*.jpg"))
         # insert batch_dim=1 after axis=0 (where None->1)
         images = self.load_data(mesh, is_test=True)[:,None]
         for i,image in enumerate(images): # output *.png to args.test_dir
             im = self.sess.run(self.fake_B_sample, feed_dict={self.real_data: image})
-            save_images(im, mesh[i][:-4]+".png", sz[i]) # batch_size=1
+            save_images(im, mesh[i][:-4]+".png", self.shape[i]) # batch_size=1
         
         ps = self.ps; out = "" # ps is a reference of self.ps
         pp = BatchPS(args.test_dir) # [PNSR, SSIM, PNSR*SSIM]
@@ -439,17 +444,20 @@ class pix2pix(object):
         data = glob(sample_dir + "/*_*.jpg")
         data = np.random.choice(data, self.batch_size)
         images = self.load_data(data, is_test=False)
+        if type(images)==bool: return # discard this batch
         im, d_loss, g_loss = self.sess.run([self.fake_B_sample, self.d_loss, self.g_loss], feed_dict={self.real_data: images})
-        save_images(im, './{}/train_{:08d}.png'.format(sample_dir, counter), sz[0])
+        save_images(im, './{}/train_{:08d}.png'.format(sample_dir, counter), self.shape[0])
         print("[Sample] d_loss: {:.8f}, g_loss: {:.8f}".format(d_loss, g_loss))
     
     
-    def load_data(self, data, is_test=False): # batch images
-        size = (self.image_size,)*2 # resize for feed-in
-        sz.clear() # initialize load_image, needn't global
-        images = [load_image(im, size, is_test) for im in data]
+    def load_data(self, data, is_test=False): # in batch
+        size = (self.input_size,) * 2
+        image = [0]*len(data); self.shape = image.copy()
+        for i,im in enumerate(data): # load images in batch
+            image[i],self.shape[i] = load_image(im, size, is_test)
+            if type(image[i])==bool: return False # discard for train
+        
         if not self.is_grayscale: # for color images
-            return np.array(images).astype(np.float32)
+            return np.array(image).astype(np.float32)
         else: # grayscale: insert channel dim/axis at None->1
-            return np.array(images).astype(np.float32)[:,:,:,None]
-
+            return np.array(image).astype(np.float32)[:,:,:,None]

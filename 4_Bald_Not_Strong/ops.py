@@ -1,13 +1,14 @@
 # coding:utf-8
 #!/usr/bin/python3
+
 import cv2
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.framework import ops
 
+
 TType = tf.float32; # TType = tf.float16
-
-
+################################################################################
 class batch_norm(object):
     def __init__(self, epsilon=1E-5, momentum=0.9, name="batch_norm"):
         with tf.variable_scope(name):
@@ -18,6 +19,7 @@ class batch_norm(object):
     # h1 = lrelu(tf.contrib.layers.batch_norm(conv2d(h0,self.df_dim*2,name='d_h1_conv'), decay=0.9, updates_collections=None, epsilon=1E-5, scale=True, scope="d_h1_conv"))
 
 
+################################################################################
 def lrelu(x, leak=0.2, name="lrelu"):   return tf.maximum(x, leak*x)
 
 
@@ -77,6 +79,7 @@ def linear(input, output_size, scope=None, stddev=0.02, bias_start=0.0, with_w=F
         else:       return tf.matmul(input, matrix) + bias
 
 
+################################################################################
 # Peak Signal to Noise Ratio
 def PSNR(I, K, md=1, ch=1, L=255):
     assert(I.shape==K.shape) # Tensor[height,width,channel]
@@ -126,3 +129,4 @@ def TestSP(I, K, md=1, b=1): # Test SSIM/PSNR
         print("SSIM:", ss.run(SSIM(I1,K1,md)))
         print("SSLF:", ss.run(SSLF(I1,K1,md,b)))
         print("PSNR:", PSNR(I1,K1,md).eval(session=ss))
+
